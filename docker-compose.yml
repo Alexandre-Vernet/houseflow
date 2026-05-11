@@ -1,0 +1,57 @@
+version: '3'
+services:
+  houseflow-app:
+    image: alexv31/houseflow:app
+    networks:
+      - houseflow-network
+    ports:
+      - "3016:80"
+      - "3017:443"
+
+  houseflow-api:
+    image: alexv31/houseflow:api
+    depends_on:
+      - houseflow-db
+    environment:
+      - spring.datasource.url=jdbc:postgresql://houseflow-db:5432/database
+      - spring.datasource.username=user
+      - spring.datasource.password=password
+      - spring.jpa.hibernate.ddl-auto=update
+      - spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+      - spring.flyway.locations=classpath:db/migration
+      - spring.flyway.baseline-on-migrate=false
+      - server.servlet.context-path=/api
+      - allowed.origin=https://houseflow.alexandre-vernet.fr
+      - security.jwt.secret-key=
+      - security.jwt.expiration-time=3600000
+      - security.jwt.refresh.expiration-time=604800000
+      - logging.level.org.springframework.security=INFO
+      - server.port=80
+      - server.address=0.0.0.0
+    networks:
+      - houseflow-network
+    ports:
+      - "4012:80"
+      - "4013:443"
+
+  houseflow-db:
+    image: postgres:17
+    restart: always
+    networks:
+      - houseflow-network
+    environment:
+      - POSTGRES_DB=database
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5018:5432"
+      - "5019:443"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
+networks:
+  houseflow-network:
+    driver: bridge
